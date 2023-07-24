@@ -1,5 +1,6 @@
-scan*/*
 zstack*/*
+scan*/*
+stitch*/*
 local/*
 *.gcode
 *.stl
