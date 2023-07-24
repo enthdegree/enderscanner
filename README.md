@@ -34,9 +34,6 @@ In slightly more detail, the following pieces are involved (roughly in order of 
 	- `zstack.py`: Capture a bunch of images of the film negative for a range of Z displacements, and download them to a folder on the host computer. 
 		This is used to find the focus plane. 
 	- `basic_scan.py`: Sweep the print head around to capture an X-Y grid of images, and download them to a folder on the host computer.
-	- `correct_metadata.py`: Bitmaps produced by the Raspberry Pi Camera have negative height, seemingly to represent that they should be mirrored.
-		Panotools (the stitch routines) will refuse to process the images because of this. 
-		This script refreshes the data to positive dimensions and actually performs the mirroring.
 	- `stitch.py`: Attempts to stitch partial image captures from `basic_scan.py` using panotools. 
 		The strategy: (1) Get control points for each group of 2x2 in the grid. 
 		(2) Make a new project file with all the control points, and find optimal positions.
