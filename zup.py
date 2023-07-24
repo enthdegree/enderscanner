@@ -1,4 +1,5 @@
 # Pull head to around the middle of the volume
+
 import http.client
 import json
 
@@ -20,13 +21,14 @@ op_key = '3250085121E3424B93998369A46FEA7D' # OctoPrint api key for hostuser
 op_post_path = '/api/printer/printhead'
 op_header = {
     'Content-type': 'application/json',
-    'Authorization': f'Bearer {op_key}'}
+    'Authorization': f'Bearer {op_key}',
+    }
 op_cmd_jog = {
     'command': 'jog', 
     'absolute': True,
     'y': [],
     'z': [],
-    'speed': mm_per_s*60, 
+    'speed': mm_per_s*60,
     }
 
 op_conn = http.client.HTTPConnection(hostname, op_port) # Connect to rpi OctoPrint

@@ -50,15 +50,16 @@ enc = 'jpg'
 rpi_cmd_capture = f'libcamera-still --shutter {shutter_us} --gain {gain} --awbgains {awb_red},{awb_blue} --denoise {denoise} -e {enc} --immediate -n -o'
 op_post_path = '/api/printer/printhead'
 op_header = {
-        'Content-type': 'application/json',
-        'Authorization': f'Bearer {op_key}'}
+    'Content-type': 'application/json',
+    'Authorization': f'Bearer {op_key}',
+    }
 op_cmd_jog = {
-        'command': 'jog', 
-        'absolute': True,
-        'y': [],
-        'z': [],
-        'speed': mm_per_s*60, 
-        }
+    'command': 'jog', 
+    'absolute': True,
+    'y': [],
+    'z': [],
+    'speed': mm_per_s*60, 
+    }
 
 def jog(x,y,z=z_min): # Jog printhead
     op_cmd_jog.update({'x': x, 'y': y, 'z':min(z_max,max(z_min,z))}) 
