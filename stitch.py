@@ -6,8 +6,7 @@
 # - Globs all the found control points into a new, big project file
 # - Stitches the big project file
 # 
-# This approach avoids panotools wasting cycles searching for impossible 
-# control points.
+# This approach prevents panotools from wasting cycles on bad control points.
 
 import numpy as np
 
@@ -15,9 +14,14 @@ import os
 import sys
 import shutil
 import subprocess
+import threading
 import glob
 import time
 from PIL import Image, ImageOps
+
+# Runtime options
+n_max_threads = 3 # Max # of threads to 
+verbose = False 
 
 # Stitch options
 nr = 10
@@ -27,9 +31,8 @@ vc = range(nc-1) # Cols to loop over (west sub-grid)
 n_groups = len(vr)*len(vc)
 n_img = (len(vr)+1)*(len(vc)+1)
 truemirror = False # See below, 'Correct libcamera-still header'
-verbose = False 
 
-ptopt = 'y,p,r' # autooptimiser parameters for panotools to optimize
+ptopt = 'y,p,r,v,b' # autooptimiser parameters for panotools to optimize
 ptset = 'v=1.0' # autooptimiser parameters for panotools to set
 
 # Directories and filenames
@@ -61,28 +64,50 @@ if not verbose:
 # Find control points on each 2x2 grid of adjacent images
 t0 = time.time()
 absidx = 0
-l_fcp = []
-for r in vr: 
+l_cp = [] # List of control point files
+l_cmd = [] # List of command lists to run to find control points
+l_t = [] # List of threads that get spawned 
+for r in vr: # Get the list of commands to execute
     for c in vc:
         absidx += 1
-        fcp = f'{stitchdir}/r{r}_c{c}.pto'  
-        print(f'Making control points {fcp} ({absidx} of {n_groups})')
-        fnw = f'{scandir}/r{r+0}_c{c+0}.{enc}' 
-        fne = f'{scandir}/r{r+0}_c{c+1}.{enc}' 
-        fsw = f'{scandir}/r{r+1}_c{c+0}.{enc}' 
-        fse = f'{scandir}/r{r+1}_c{c+1}.{enc}' 
-        subprocess.Popen( # Make a project file with these images
-                [f'{ptpath}/pto_gen', f'--output={fcp}', fnw, fne, fsw, fse],
-                stdout=outstream).wait()
-        subprocess.Popen( # Find control points 
-                [f'{ptpath}/cpfind', f'--output={fcp}', fcp],
-                stdout=outstream).wait()
-        l_fcp.append(fcp)
+        cp = f'{stitchdir}/r{r}_c{c}.pto'  
+        l_cp.append(cp)
+        lq = [
+            f'{scandir}/r{r+0}_c{c+0}.{enc}', 
+            f'{scandir}/r{r+0}_c{c+1}.{enc}', 
+            f'{scandir}/r{r+1}_c{c+0}.{enc}', 
+            f'{scandir}/r{r+1}_c{c+1}.{enc}', 
+            ]
+        cmd = {
+            'absidx': absidx, 
+            'makeproject': [f'{ptpath}/pto_gen', f'--output={cp}'] + lq,
+            'findcp': [f'{ptpath}/cpfind', f'--output={cp}', cp], 
+            }
+        l_cmd.append(cmd)
 
-print(f'Positioning segments using all control points.')
+# Run all of l_cmd in as many threads as allowed 
+def cp_worker(cmd):
+    absidx = cmd['absidx']
+    cp = l_cp[absidx-1]
+    print(f'Making control points {cp} ({absidx} of {n_groups}).')
+    subprocess.Popen(cmd['makeproject'], stdout=outstream).wait()
+    subprocess.Popen(cmd['findcp'], stdout=outstream).wait()
+    return
+for cmd in l_cmd:
+    is_started = False
+    while not is_started:
+        if threading.active_count() < n_max_threads:
+            t = threading.Thread(target=cp_worker, args=(cmd,))
+            t.start()
+            l_t.append(t)
+            is_started = True
+        else: time.sleep(1.0)
+for t in l_t: t.join() # Finish up
+
 fstitch = f'{stitchdir}/stitch.pto'
+print(f'Positioning segments using all control points.')
 subprocess.Popen( # Merge project files from the grid loop
-        [f'{ptpath}/pto_merge', f'--output={fstitch}'] + l_fcp,
+        [f'{ptpath}/pto_merge', f'--output={fstitch}'] + l_cp,
         stdout=outstream).wait()
 subprocess.Popen( # Remove duplicates/bad control points
         [f'{ptpath}/cpclean', f'--output={fstitch}', fstitch],
@@ -93,16 +118,13 @@ subprocess.Popen( # Specify the optimiztion to be performed
 subprocess.Popen( # Execute position optimization
         [f'{ptpath}/autooptimiser', '-n', f'--output={fstitch}', fstitch],
         stdout=outstream).wait()
-
 subprocess.Popen( # Design output canvas
         [f'{ptpath}/pano_modify', '--fov=AUTO', '--center', '--canvas=AUTO', f'--output={fstitch}', fstitch],
         stdout=outstream).wait()
-
 print(f'Remapping segments')
 subprocess.Popen( 
         [f'{ptpath}/nona', '-m', 'TIFF_m', '-v', f'--output={stitchdir}/stitch_', fstitch],
         ).wait()
-
 print(f'Creating stitch.')
 l_remap = glob.glob(f'{stitchdir}/stitch_*.tif') # Get all the remapped images
 subprocess.Popen( # Blend seams in the final output
