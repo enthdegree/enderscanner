@@ -20,7 +20,7 @@ My motivation: because you can. :)
 
 ## Components
 
-![Ender Scanner print head over a backlit film negative.](./img/scanhead.jpg)
+![Ender Scanner print head over a backlit film negative.](./img/printhead.jpg)
 
 In slightly more detail, the following pieces are involved (roughly in order of build and usage steps):
  
