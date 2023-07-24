@@ -2,6 +2,7 @@ zstack*/*
 scan*/*
 stitch*/*
 local/*
+multiblend/*
 *.gcode
 *.stl
 *.tif

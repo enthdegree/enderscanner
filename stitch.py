@@ -1,12 +1,23 @@
-# Attempt to merge a basic scan 
-
-# Expects scandir to be populated by basic_scan (filenames like r###_c###.bmp)
+## Attempt to merge a basic scan 
+#
 # - Finds control points for each group of 2x2 adjacent images
 #   (You can stitch a sub-rectangle instead by designing your own vr, vc)
 # - Globs all the found control points into a new, big project file
 # - Stitches the big project file
-# 
+#
 # This approach prevents panotools from wasting cycles on bad control points.
+#
+# At runtime, the script expects scandir to be populated by files collected 
+# by basic_scan.py (with filenames like r###_c###.bmp)
+#
+# Aside from the imported modules, this script depends on:
+#  - ptpath: path to Panotools binaries, for example the ones included in a 
+#    Hugin installation
+#  - cmd_blend: A blend tool like Panotools' enblend. enblend is slow for large
+#    stitches, but can be enabled if you still want it.
+#    Multiblend seems to work impressively well: https://horman.net/multiblend/ 
+# 
+ 
 
 import numpy as np
 
@@ -23,6 +34,13 @@ from PIL import Image, ImageOps
 n_max_threads = 3 # Max # of threads to 
 verbose = False 
 
+# Directories and filenames
+enc = 'bmp'
+scandir = './scan' # Where the scan images are
+stitchdir = './stitch_files' # Directory for stitch project files
+outname = './stitch.tif' # Full stitch output
+ptpath = 'C:/Program Files/Hugin/bin' # Location of panotools binaries
+
 # Stitch options
 nr = 10
 nc = 10
@@ -34,13 +52,8 @@ truemirror = False # See below, 'Correct libcamera-still header'
 
 ptopt = 'y,p,r,v,b' # autooptimiser parameters for panotools to optimize
 ptset = 'v=1.0' # autooptimiser parameters for panotools to set
-
-# Directories and filenames
-enc = 'bmp'
-scandir = './scan' # Where the scan images are
-stitchdir = './stitch_files' # Directory for stitch project files
-outname = './stitch.tif' # Full stitch output
-ptpath = 'C:/Program Files/Hugin/bin' # Location of panotools binaries
+cmd_blend = './multiblend/multiblend' # Multiblend: https://horman.net/multiblend/
+#cmd_blend = f'{ptpath}/enblend # panotools' enblend (slow)
 
 # Clean up
 print('Cleaning up.')
@@ -70,13 +83,13 @@ l_t = [] # List of threads that get spawned
 for r in vr: # Get the list of commands to execute
     for c in vc:
         absidx += 1
-        cp = f'{stitchdir}/r{r}_c{c}.pto'  
+        cp = f'{stitchdir}/r{r:03d}_c{c:03d}.pto'  
         l_cp.append(cp)
         lq = [
-            f'{scandir}/r{r+0}_c{c+0}.{enc}', 
-            f'{scandir}/r{r+0}_c{c+1}.{enc}', 
-            f'{scandir}/r{r+1}_c{c+0}.{enc}', 
-            f'{scandir}/r{r+1}_c{c+1}.{enc}', 
+            f'{scandir}/r{r+0:03d}_c{c+0:03d}.{enc}', 
+            f'{scandir}/r{r+0:03d}_c{c+1:03d}.{enc}', 
+            f'{scandir}/r{r+1:03d}_c{c+0:03d}.{enc}', 
+            f'{scandir}/r{r+1:03d}_c{c+1:03d}.{enc}', 
             ]
         cmd = {
             'absidx': absidx, 
@@ -121,14 +134,16 @@ subprocess.Popen( # Execute position optimization
 subprocess.Popen( # Design output canvas
         [f'{ptpath}/pano_modify', '--fov=AUTO', '--center', '--canvas=AUTO', f'--output={fstitch}', fstitch],
         stdout=outstream).wait()
+
 print(f'Remapping segments')
 subprocess.Popen( 
         [f'{ptpath}/nona', '-m', 'TIFF_m', '-v', f'--output={stitchdir}/stitch_', fstitch],
         ).wait()
+
 print(f'Creating stitch.')
 l_remap = glob.glob(f'{stitchdir}/stitch_*.tif') # Get all the remapped images
 subprocess.Popen( # Blend seams in the final output
-        [f'{ptpath}/enblend', f'--output={outname}'] + l_remap,
+        [cmd_blend, f'--output={outname}'] + l_remap,
         ).wait()
 
 print(f'{time.time()-t0} s')

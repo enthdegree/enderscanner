@@ -7,6 +7,8 @@ An Ender 3 can be used as a film scanner:
  - A Raspberry Pi HD camera can be mounted face-down on the printhead and swept around to capture macro pictures of the film negative.
  - Those captures can be stitched.
 
+![A 6x6 frame scanned by this method. (Goofy inversion profile, I know).](./img/example.jpg)
+
 ## Why
 
 > What is the motivation for doing this?
@@ -17,6 +19,8 @@ It is possible the 3D printer approach can be refined into a viable alternative.
 My motivation: because you can. :)
 
 ## Components
+
+![Ender Scanner print head over a backlit film negative.](./img/scanhead.jpg)
 
 In slightly more detail, the following pieces are involved (roughly in order of build and usage steps):
  
@@ -34,9 +38,10 @@ In slightly more detail, the following pieces are involved (roughly in order of 
 	- `zstack.py`: Capture a bunch of images of the film negative for a range of Z displacements, and download them to a folder on the host computer. 
 		This is used to find the focus plane. 
 	- `basic_scan.py`: Sweep the print head around to capture an X-Y grid of images, and download them to a folder on the host computer.
-	- `stitch.py`: Attempts to stitch partial image captures from `basic_scan.py` using panotools. 
+	- `stitch.py`: Attempts to stitch segments from `basic_scan.py` using panotools. 
 		The strategy: (1) Get control points for each group of 2x2 in the grid. 
 		(2) Make a new project file with all the control points, and find optimal positions.
+		(3) Produce a stitched .TIF with a blend tool ([multiblend](https://horman.net/multiblend/) is much faster than Panotools' enblend)
 
 ## Possible future work
 
@@ -54,4 +59,5 @@ A few ideas are worth exploring:
  - GUI tool
  - Automatic film advancement mechanism 
  - Nicer lens and sensor...
+
 
