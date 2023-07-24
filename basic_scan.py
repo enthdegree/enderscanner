@@ -1,11 +1,9 @@
 # Basic scan
 
 import numpy as np
-
 import fabric 
 import http.client
 import json
-
 import os
 import sys
 import shutil
@@ -77,10 +75,11 @@ op_conn = http.client.HTTPConnection(hostname, op_port) # Connect to rpi OctoPri
 # Download management subroutines
 l_to_dl = [] # List of download commands that still need to be executed
 l_dl = [] # List of started download processes
+
 def count_active_dl(): # Count the active downloads in l_dl 
     n_alive = 0
     for p in l_dl: 
-           if p.poll() is None: n_alive += 1
+        if p.poll() is None: n_alive += 1
     return n_alive
 
 def manage_dl(): # Start downloads in l_to_dl (if possible), return 0 when everything is done

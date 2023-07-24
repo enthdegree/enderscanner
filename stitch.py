@@ -16,11 +16,8 @@
 #  - cmd_blend: A blend tool like Panotools' enblend. enblend is slow for large
 #    stitches, but can be enabled if you still want it.
 #    Multiblend seems to work impressively well: https://horman.net/multiblend/ 
-# 
- 
 
 import numpy as np
-
 import os
 import sys
 import shutil
@@ -98,14 +95,15 @@ for r in vr: # Get the list of commands to execute
             }
         l_cmd.append(cmd)
 
-# Run all of l_cmd in as many threads as allowed 
-def cp_worker(cmd):
+def cp_worker(cmd): # Run a control point search on the specified image group
     absidx = cmd['absidx']
     cp = l_cp[absidx-1]
     print(f'Making control points {cp} ({absidx} of {n_groups}).')
     subprocess.Popen(cmd['makeproject'], stdout=outstream).wait()
     subprocess.Popen(cmd['findcp'], stdout=outstream).wait()
     return
+
+# Run all of l_cmd in as many threads as allowed 
 for cmd in l_cmd:
     is_started = False
     while not is_started:
@@ -120,30 +118,30 @@ for t in l_t: t.join() # Finish up
 fstitch = f'{stitchdir}/stitch.pto'
 print(f'Positioning segments using all control points.')
 subprocess.Popen( # Merge project files from the grid loop
-        [f'{ptpath}/pto_merge', f'--output={fstitch}'] + l_cp,
-        stdout=outstream).wait()
+    [f'{ptpath}/pto_merge', f'--output={fstitch}'] + l_cp,
+    stdout=outstream).wait()
 subprocess.Popen( # Remove duplicates/bad control points
-        [f'{ptpath}/cpclean', f'--output={fstitch}', fstitch],
-        stdout=outstream).wait()
+    [f'{ptpath}/cpclean', f'--output={fstitch}', fstitch],
+    stdout=outstream).wait()
 subprocess.Popen( # Specify the optimiztion to be performed
-        [f'{ptpath}/pto_var', f'--opt={ptopt}', f'--set={ptset}', f'--output={fstitch}', fstitch],
-        stdout=outstream).wait()
+    [f'{ptpath}/pto_var', f'--opt={ptopt}', f'--set={ptset}', f'--output={fstitch}', fstitch],
+    stdout=outstream).wait()
 subprocess.Popen( # Execute position optimization
-        [f'{ptpath}/autooptimiser', '-n', f'--output={fstitch}', fstitch],
-        stdout=outstream).wait()
+    [f'{ptpath}/autooptimiser', '-n', f'--output={fstitch}', fstitch],
+    stdout=outstream).wait()
 subprocess.Popen( # Design output canvas
-        [f'{ptpath}/pano_modify', '--fov=AUTO', '--center', '--canvas=AUTO', f'--output={fstitch}', fstitch],
-        stdout=outstream).wait()
+    [f'{ptpath}/pano_modify', '--fov=AUTO', '--center', '--canvas=AUTO', f'--output={fstitch}', fstitch],
+    stdout=outstream).wait()
 
 print(f'Remapping segments')
 subprocess.Popen( 
-        [f'{ptpath}/nona', '-m', 'TIFF_m', '-v', f'--output={stitchdir}/stitch_', fstitch],
-        ).wait()
+    [f'{ptpath}/nona', '-m', 'TIFF_m', '-v', f'--output={stitchdir}/stitch_', fstitch],
+    ).wait()
 
 print(f'Creating stitch.')
 l_remap = glob.glob(f'{stitchdir}/stitch_*.tif') # Get all the remapped images
 subprocess.Popen( # Blend seams in the final output
-        [cmd_blend, f'--output={outname}'] + l_remap,
-        ).wait()
+    [cmd_blend, f'--output={outname}'] + l_remap,
+    ).wait()
 
 print(f'{time.time()-t0} s')
