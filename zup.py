@@ -5,7 +5,7 @@ import json
 
 mm_per_s = 50 # Print head speed
 z_max = 100 # z jog limits (void collision)
-z_min = 30 
+z_min = 71 
 xc = 100 # X center
 yc = 100 # Y center
 
@@ -33,7 +33,11 @@ op_cmd_jog = {
 
 op_conn = http.client.HTTPConnection(hostname, op_port) # Connect to rpi OctoPrint
 def jog(x,y,z): # Jog printhead
-    op_cmd_jog.update({'x': x, 'y': y, 'z':min(z_max,max(z_min,z))}) 
+    op_cmd_jog.update({
+        'x': x, 
+        'y': y, 
+        'z': min(z_max, max(z_min, z))
+        }) 
     op_json_cmd_jog = json.dumps(op_cmd_jog)
     op_conn.request('POST', op_post_path, op_json_cmd_jog, op_header) 
     resp = op_conn.getresponse()

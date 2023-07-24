@@ -14,21 +14,22 @@
 #  - ptpath: path to Panotools binaries, for example the ones included in a 
 #    Hugin installation
 #  - cmd_blend: A blend tool like Panotools' enblend. enblend is slow for large
-#    stitches, but can be enabled if you still want it.
-#    Multiblend seems to work impressively well: https://horman.net/multiblend/ 
+#    stitches.
+#    Multiblend seems to work impressively well and functions as a drop-in 
+#    replacement for enblend: https://horman.net/multiblend/ 
 
+from PIL import Image, ImageOps
 import numpy as np
-import os
-import sys
-import shutil
 import subprocess
 import threading
+import shutil
 import glob
 import time
-from PIL import Image, ImageOps
+import sys
+import os
 
 # Runtime options
-n_max_threads = 3 # Max # of threads to 
+n_max_threads = 3 # Max # of threads to use in control point search 
 verbose = False 
 
 # Directories and filenames
@@ -39,18 +40,19 @@ outname = './stitch.tif' # Full stitch output
 ptpath = 'C:/Program Files/Hugin/bin' # Location of panotools binaries
 
 # Stitch options
-nr = 10
-nc = 10
-vr = range(nr-1) # Rows to loop over (north sub-grid)
-vc = range(nc-1) # Cols to loop over (west sub-grid)
+vr = range(10-1) # Rows to loop over (north sub-grid)
+vc = range(10-1) # Cols to loop over (west sub-grid)
 n_groups = len(vr)*len(vc)
 n_img = (len(vr)+1)*(len(vc)+1)
 truemirror = False # See below, 'Correct libcamera-still header'
 
 ptopt = 'y,p,r,v,b' # autooptimiser parameters for panotools to optimize
 ptset = 'v=1.0' # autooptimiser parameters for panotools to set
-cmd_blend = './multiblend/multiblend' # Multiblend: https://horman.net/multiblend/
-#cmd_blend = f'{ptpath}/enblend # panotools' enblend (slow)
+
+# Panotools' enblend is slow. 
+# Consider replacing Hugin's enblend binary with a renamed Multiblend binary: 
+# https://horman.net/multiblend/
+cmd_blend = f'{ptpath}/enblend' 
 
 # Clean up
 print('Cleaning up.')
@@ -80,13 +82,13 @@ l_t = [] # List of threads that get spawned
 for r in vr: # Get the list of commands to execute
     for c in vc:
         absidx += 1
-        cp = f'{stitchdir}/r{r:03d}_c{c:03d}.pto'  
+        cp = f'{stitchdir}/img_r{r:03d}_c{c:03d}.pto'  
         l_cp.append(cp)
         lq = [
-            f'{scandir}/r{r+0:03d}_c{c+0:03d}.{enc}', 
-            f'{scandir}/r{r+0:03d}_c{c+1:03d}.{enc}', 
-            f'{scandir}/r{r+1:03d}_c{c+0:03d}.{enc}', 
-            f'{scandir}/r{r+1:03d}_c{c+1:03d}.{enc}', 
+            f'{scandir}/img_r{r+0:03d}_c{c+0:03d}.{enc}', 
+            f'{scandir}/img_r{r+0:03d}_c{c+1:03d}.{enc}', 
+            f'{scandir}/img_r{r+1:03d}_c{c+0:03d}.{enc}', 
+            f'{scandir}/img_r{r+1:03d}_c{c+1:03d}.{enc}', 
             ]
         cmd = {
             'absidx': absidx, 

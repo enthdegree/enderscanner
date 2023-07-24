@@ -1,28 +1,28 @@
 # Basic scan
 
 import numpy as np
-import fabric 
 import http.client
-import json
-import os
-import sys
-import shutil
 import subprocess
+import shutil
+import fabric 
+import json
 import time
+import sys
+import os
 
 # Scan parameters
 mm_per_s = 50 # Print head speed
 settle_s = 5 # Settling time before image capture
 
 z_max = 100 # z jog limits (void collision)
-z_min = 30 
+z_min = 71 
 xc = 100 # X center
 yc = 100 # Y center
 
 sweep_w = 70
 sweep_h = 70
-vx = np.linspace(xc-sweep_w/2, xc+sweep_w/2, 10)
-vy = np.linspace(yc-sweep_h/2, yc+sweep_h/2, 10)
+vx = np.linspace(xc-sweep_w/2, xc+sweep_w/2, 8)
+vy = np.linspace(yc-sweep_h/2, yc+sweep_h/2, 8)
 if len(sys.argv) > 1: z = float(sys.argv[1]) # Take the z height (mm) from the first CLI arg
 else: z = z_min
 n_img = len(vx)*len(vy)
@@ -36,7 +36,7 @@ denoise = 'off'
 enc = 'bmp'
 
 # Connection and directory options
-n_max_dl = 2 # Max number of concurrent downloads from rpi 
+n_max_dl = 1 # Max number of concurrent downloads from rpi 
 local_outdir = '.\\scan' # Where to save the images coming from the rpi
 hostuser = 'user' # rpi username
 hostname = 'raspbian.local' # rpi network location
@@ -60,7 +60,11 @@ op_cmd_jog = {
     }
 
 def jog(x,y,z): # Jog printhead
-    op_cmd_jog.update({'x': x, 'y': y, 'z':min(z_max,max(z_min,z))}) 
+    op_cmd_jog.update({
+        'x': x, 
+        'y': y, 
+        'z': min(z_max, max(z_min, z)),
+        }) 
     op_json_cmd_jog = json.dumps(op_cmd_jog)
     op_conn.request('POST', op_post_path, op_json_cmd_jog, op_header) 
     resp = op_conn.getresponse().read()
@@ -86,7 +90,11 @@ def count_active_dl(): # Count the active downloads in l_dl
 def manage_dl(): # Start downloads in l_to_dl (if possible), return 0 when everything is done
     n_active = count_active_dl() 
     n_to_start = min(len(l_to_dl), n_max_dl-n_active)
-    for idl in range(n_to_start): l_dl.append(subprocess.Popen(l_to_dl.pop()))
+    for idl in range(n_to_start): 
+        cmd = l_to_dl.pop(0) # FIFO
+        p = subprocess.Popen(cmd)
+        l_dl += [p]
+        print(f'\nDownloading segment {len(l_dl)} of {n_img}')
     if (n_active == 0) and (len(l_dl) == n_img): return 0
     else: return 1
 
@@ -96,7 +104,7 @@ vix = list(range(len(vx)))
 viy = list(range(len(vy)))
 absidx = 0
 
-r = jog(vx[0],vy[-1],z) # The first jog may be a longer sweep, so go there ahead of the loop & sleep extra
+r = jog(vx[0], vy[-1], z) # The first jog may be a longer sweep, so go there ahead of the loop & sleep extra
 time.sleep(settle_s) 
 for ix in vix:
     viy = np.flip(viy) # Zig-zag to jog less
@@ -105,7 +113,7 @@ for ix in vix:
         y = vy[iy]
         absidx += 1
         fname = f'{rpi_outdir}/img_r{iy:03d}_c{ix:03d}.{enc}' 
-        print(f'Capturing {fname} ({absidx} of {n_img})')
+        print(f'\nCapturing {fname} ({absidx} of {n_img})')
 
         r = jog(x,y,z)
         print(r.decode())
@@ -114,11 +122,11 @@ for ix in vix:
         ssh_conn.run(f'{rpi_cmd_capture} {fname}')
 
         # Queue the segment for retreival
-        l_to_dl.append(['scp', '-r', f'{hostuser}@{hostname}:{fname}', local_outdir])
-        manage_dl()
+        l_to_dl += [['scp', '-r', f'{hostuser}@{hostname}:{fname}', local_outdir]]
+        manage_dl() # Start new downloads if possible
 
 # Finish
-jog(xc,yc,z_min) # Return to 0
+jog(xc, yc, z_min) # Return to 0
 ssh_conn.close()
 op_conn.close()
 while manage_dl(): time.sleep(1.0) # Wait for downloads to complete

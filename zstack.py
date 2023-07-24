@@ -1,23 +1,21 @@
 # Get a z stack
 
 import numpy as np
-
-import fabric 
 import http.client
-import json
-
-import os
-import sys
-import shutil
 import subprocess
+import fabric 
+import shutil
+import json
 import time
+import sys
+import os
 
 # Scan parameters
 mm_per_s = 50 # Print head speed
 settle_s = 10 # Settling time before image capture
 
 z_max = 100 # z jog limits (void collision)
-z_min = 30 
+z_min = 71 
 xc = 100 # X center
 yc = 100 # Y center
 
@@ -28,7 +26,7 @@ else: zend = z_min+10
 
 x = xc
 y = yc
-vz = np.linspace(zstart,zend,10)
+vz = np.linspace(zstart, zend, 10)
 
 # Exposure parameters
 shutter_us = int(100e-3*1e6)
@@ -62,7 +60,11 @@ op_cmd_jog = {
     }
 
 def jog(x,y,z=z_min): # Jog printhead
-    op_cmd_jog.update({'x': x, 'y': y, 'z':min(z_max,max(z_min,z))}) 
+    op_cmd_jog.update({
+        'x': x, 
+        'y': y, 
+        'z': min(z_max, max(z_min, z))
+        }) 
     op_json_cmd_jog = json.dumps(op_cmd_jog)
     op_conn.request('POST', op_post_path, op_json_cmd_jog, op_header) 
     resp = op_conn.getresponse()
@@ -79,7 +81,7 @@ op_conn = http.client.HTTPConnection(hostname, op_port) # Connect to rpi OctoPri
 
 # Capture loop
 t0 = time.time()
-r = jog(x,y,vz[0])
+r = jog(x, y, vz[0])
 time.sleep(settle_s) # Settle longer for the first jog
 l_dl = []
 for z in vz:
