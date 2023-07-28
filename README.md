@@ -3,8 +3,8 @@
 
 An Ender 3 can be used as a film scanner:
 
- - Its generous print volume fits a light panel and a loaded film negative holder. 
- - A Raspberry Pi HD camera can be mounted face-down on the printhead and swept around to capture macro pictures of the film negative.
+ - Its large print volume fits a light panel and film carrier. 
+ - A Raspberry Pi HD camera can be mounted face-down on the printhead and swept around to image segments of the film negative.
  - Those captures can be stitched.
 
 ![A 6x6 frame scanned by this method. (using a kind of goofy inversion profile).](./img/example.jpg)
@@ -14,7 +14,7 @@ An Ender 3 can be used as a film scanner:
 
 > What is the motivation for doing this?
 
-At the time of writing, most quality film scanning technology is some combination of proprietary, aging, thousands of dollars and awkward to use and set up. 
+At the time of writing, most quality film scanning equipment is some combination of proprietary, aging, thousands of dollars and awkward to use and set up. 
 It is possible the 3D printer approach can be refined into a viable alternative.
 
 My motivation: because you can. :)
