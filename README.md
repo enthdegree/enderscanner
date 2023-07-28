@@ -1,4 +1,4 @@
-# Ender Scanner
+# Ender Scan
 ### Tools for scanning film negatives with an Ender 3 Neo
 
 An Ender 3 can be used as a film scanner:
@@ -21,8 +21,8 @@ My motivation: because you can. :)
 
 ## Components
 
-![Ender Scanner print head over a backlit film negative.](./img/printhead.jpg)
-*Ender Scanner print head over a backlit film negative.*
+![Ender Scan print head over a backlit film negative.](./img/printhead.jpg)
+*Ender Scan print head over a backlit film negative.*
 
 In slightly more detail, the following pieces are involved (roughly in order of build and usage steps):
  
@@ -55,13 +55,12 @@ A few ideas are worth exploring:
  - `stitch.py` should by default automatically read the grid of segments available in the scan folder.
  - Mounting bracket that facilitates adjusting the lens toward parallel film plane.
  - Auto-exposure and auto-focus-finding, possibly per-segment. 
-	This could benefit highly warped negatives or a misaligned camera lens.
+	This could benefit highly warped negatives or a misaligned lens.
  - Stitch routine that fails gracefully: some batches of scan segments will be difficult to stitch. 
 	The stitch routine should detect when it didn't find good control points a 2x2 sub-problem, then hand the user an interface to position that part of the image visually, by hand.
  - Achieve higher effective color bit-depth by capturing multiple exposures and high-precision averaging. 
- - Scan wizard 
- - GUI tool
- - Automatic film advancement mechanism 
+ - GUI wizard 
+ - Automatic film advancement 
  - Nicer lens and sensor...
 
 
