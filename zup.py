@@ -6,7 +6,7 @@ import json
 mm_per_s = 50 # Print head speed
 z_max = 100 # z jog limits (void collision)
 z_min = 71 
-xc = 100 # X center
+xc = 80 # X center
 yc = 100 # Y center
 
 x = xc

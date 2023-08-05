@@ -14,10 +14,10 @@ import os
 mm_per_s = 50 # Print head speed
 settle_s = 10 # Settling time before image capture
 
-z_max = 100 # z jog limits (void collision)
-z_min = 71 
-xc = 100 # X center
-yc = 100 # Y center
+z_max = 250 # z jog limits (void collision)
+z_min = 100 
+xc = 80 # X center
+yc = 95 # Y center
 
 if len(sys.argv) > 1: zstart = float(sys.argv[1]) 
 else: zstart = z_min
@@ -29,14 +29,14 @@ y = yc
 vz = np.linspace(zstart, zend, 10)
 
 # Exposure parameters
-shutter_us = int(100e-3*1e6)
+shutter_us = int(10e-3*1e6)
 gain = 1.0
-awb_red = 2.0
-awb_blue = 2.0
+awb_red = 2.2
+awb_blue = 1.3
 denoise = 'off'
 
 # Connection and directory options
-local_outdir = '.\\zstack' # f'%HOMEPATH%\Downloads' # Where to save the images coming from the rpi
+local_outdir = './zstack' # Where to save the images coming from the rpi
 hostuser = 'user' # rpi username
 hostname = 'raspbian.local' # rpi network location
 op_port = 5000 # port rpi's octoprint listens on

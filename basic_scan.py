@@ -37,7 +37,7 @@ enc = 'bmp'
 
 # Connection and directory options
 n_max_dl = 1 # Max number of concurrent downloads from rpi 
-local_outdir = '.\\scan' # Where to save the images coming from the rpi
+local_outdir = './scan' # Where to save the images coming from the rpi
 hostuser = 'user' # rpi username
 hostname = 'raspbian.local' # rpi network location
 op_port = 5000 # port rpi's octoprint listens on
